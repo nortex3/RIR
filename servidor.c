@@ -28,7 +28,7 @@ int trataBackup(char *arg, int tamanho,char* p){
 int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
     char args[3][128];
-    if (sscanf(command,"%s %s %[^]]",args[0],args[1],args[2])!=3) return -1;
+    if (sscanf(command,"%s %s %[^]]",args[0],args[1],args[2])!=3) {perror("Erro:");return -1;}
 
     if (strcmp(args[1],"backup")==0){
 
@@ -84,7 +84,7 @@ void recebePedido() {
     int args=1;
 	fd = open(NOME_PIPE, O_RDONLY);
 
-    if(fd==-1) perror("Erro abertura pipe");
+    if(fd==-1) perror("Erro abertura pipe:");
     else
         while ( (tamanho=read(fd, buff + i, 1) > 0 )) {             
             if(buff[i]==' '){
