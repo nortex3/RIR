@@ -17,8 +17,8 @@ void inicializaServidor(){
 
 
 char** parser(char* agg,int tamanho) {
-    int size = 0;
-    int max_size = tamanho;
+    int size = 1;
+    int max_size = tamanho+1;
     char** args = (char**)malloc(sizeof(char*) * max_size);
     char* token = strtok(agg, " ");
 
@@ -45,23 +45,24 @@ int fazZip(char *arg, int tamanho,char* p){
 int calcDigest(char *arg, int tamanho,char* p){
 
     pid_t forkpid;
-   forkpid=fork();
-    int i,status;
+    int i;
     char ** args = parser(arg,tamanho);
-   if (forkpid==0){
-            for(i=0;args[i]!=NULL;i++) printf("%s\n",args[i] );
+        forkpid=fork();
+        args[0]=strdup("shasum");
+    if (forkpid==0){
 
-            if(execvp("shasum",args)==-1) perror("Erro Exec:");
+            if(execvp(args[0],args)==-1) perror("Erro Exec:");
 
     }else if(forkpid<0){
                 puts("Erro na delegação de tarefa para processo filho");
                 return -1;
               }else{
                     puts("Tarefa delegada para processo filho");
+                    int status;
                     waitpid(forkpid,&status,0); //Espera que o filho termine
                     if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
 
-                        return WEXITSTATUS(status);
+                        return 1;
 
                   }else { //Senão retorna -1
             return -1 ;
