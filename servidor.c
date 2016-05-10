@@ -24,7 +24,6 @@ char** parser(char* agg,int tamanho) {
 
 
     while (token != NULL) {
-       // printf("%s\n", token);
         args[size++] = strdup(token);
         if (size == max_size) {
             max_size++;
@@ -38,26 +37,40 @@ char** parser(char* agg,int tamanho) {
     return args;
 }
 
-int fazZip(char *arg, int tamanho,char* p){
-    return 0;
-}
-
-int calcDigest(char *arg, int tamanho,char* p){
+int fazZip(){
 
     pid_t forkpid;
     int i;
-    char ** args = parser(arg,tamanho);
-        forkpid=fork();
-        args[0]=strdup("shasum");
-    if (forkpid==0){
+    forkpid=fork();
+    char buffer[1024];
+    char *tmp[4];
+    int fd = open("shasum.txt",O_RDONLY, 0666);
+   
+    if (fd < 0) {
+        perror("open()");
+        exit(EXIT_FAILURE);
+    }
 
-            if(execvp(args[0],args)==-1) perror("Erro Exec:");
+
+    read(fd,buffer,1024);
+    char **args = parser(buffer,3);
+    int r = strlen(args[2])-1;
+    tmp[0]=strdup("gzip");
+    tmp[1]=strdup("-k");
+     tmp[2]=strdup(args[2]);
+     tmp[3]=NULL;
+   tmp[2][r]='\0'; 
+
+   if (forkpid==0){
+
+            if(execvp(tmp[0],tmp)==-1) perror("Erro Exec:");
+
 
     }else if(forkpid<0){
-                puts("Erro na delegação de tarefa para processo filho");
+                //puts("Erro na delegação de tarefa para processo filho");
                 return -1;
               }else{
-                    puts("Tarefa delegada para processo filho");
+                    //puts("Tarefa delegada para processo filho");
                     int status;
                     waitpid(forkpid,&status,0); //Espera que o filho termine
                     if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
@@ -67,9 +80,52 @@ int calcDigest(char *arg, int tamanho,char* p){
                   }else { //Senão retorna -1
             return -1 ;
         }
-                }
+    }
 
-    printf("Chegeu\n");
+
+}
+
+int calcDigest(char *arg, int tamanho,char* p){
+
+    pid_t forkpid;
+    
+    
+        forkpid=fork();
+        char **args = parser(arg,tamanho);
+        args[0]=strdup("shasum");
+
+       int fd = open("shasum.txt", O_CREAT |O_TRUNC| O_RDWR , 0666);
+        if (fd < 0) {
+            perror("open()");
+            exit(EXIT_FAILURE);
+        }
+        close(1);
+
+        dup2(fd, 1);
+
+
+            if (forkpid==0){
+
+                    if(execvp(args[0],args)==-1) perror("Erro Exec:");
+
+
+            }else if(forkpid<0){
+                        puts("Erro na delegação de tarefa para processo filho");
+                        return -1;
+                      }else{
+                          //  puts("Tarefa delegada para processo filho");
+                            int status;
+                            waitpid(forkpid,&status,0); //Espera que o filho termine
+                            if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
+                                close(fd);
+                                dup2(1,fd);
+
+                            return 1;
+
+                          }else { //Senão retorna -1
+                    return -1 ;
+                }
+    }
 }
 
 
@@ -94,29 +150,36 @@ int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
     char args[3][128];
     int erro=0;
+    int i;
+    int j=0;
     if (sscanf(command,"%s %s %[^]\n]",args[0],args[1],args[2])!=3) return -1;
 
     if (strcmp(args[1],"backup")==0){
 
         forkpid=fork();
 
+
         if (forkpid==0){
 
-             erro=calcDigest(args[2],tamanho-2,args[0]);  
+                 erro=calcDigest(args[2],tamanho-2,args[0]);  
 
-             if(erro!=-1){
-               // erro=trataBackup(args[2],tamanho-2,args[0]);
-                //ENvia sinal ao cliente que backup feito;
-              
-                    kill(atoi(args[0]), SIGINT);
-                    exit(1);
-            }else{
+                 if(erro!=-1){
+                    erro=fazZip();
+                 }
+                 if(erro!=-1){
+                   // erro=trataBackup(args[2],tamanho-2,args[0]);
+                    //ENvia sinal ao cliente que backup feito;
+                  
+                        kill(atoi(args[0]), SIGINT);
+                        exit(1);
+                }else{
 
-                //ENvia sinal ao cliente que ocorreu um erro;
-                kill(atoi(args[0]), SIGUSR1);
-                 exit(0);
-            }
-        }else if(forkpid<0){
+                    //ENvia sinal ao cliente que ocorreu um erro;
+                    kill(atoi(args[0]), SIGUSR1);
+                     exit(0);
+                }
+          } 
+        else if(forkpid<0){
                 puts("Erro na delegação de tarefa para processo filho");
                 return -1;
               }else{
