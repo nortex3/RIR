@@ -16,26 +16,95 @@ void inicializaServidor(){
 }
 
 
-int trataBackup(char *arg, int tamanho,char* p){
+char** parser(char* agg,int tamanho) {
+    int size = 0;
+    int max_size = tamanho;
+    char** args = (char**)malloc(sizeof(char*) * max_size);
+    char* token = strtok(agg, " ");
 
-    printf("Total de ficheiros %d\n",tamanho );
-    printf("PID do cliente %s\n",p);
-    sleep(5);
+
+    while (token != NULL) {
+       // printf("%s\n", token);
+        args[size++] = strdup(token);
+        if (size == max_size) {
+            max_size++;
+            args = (char**)realloc(args, sizeof(char*) * max_size);
+        }
+        token = strtok(NULL, " ");
+    }
+
+    args[size] = NULL;
+
+    return args;
+}
+
+int fazZip(char *arg, int tamanho,char* p){
     return 0;
+}
+
+int calcDigest(char *arg, int tamanho,char* p){
+
+    pid_t forkpid;
+   forkpid=fork();
+    int i,status;
+    char ** args = parser(arg,tamanho);
+   if (forkpid==0){
+            for(i=0;args[i]!=NULL;i++) printf("%s\n",args[i] );
+
+            if(execvp("shasum",args)==-1) perror("Erro Exec:");
+
+    }else if(forkpid<0){
+                puts("Erro na delegação de tarefa para processo filho");
+                return -1;
+              }else{
+                    puts("Tarefa delegada para processo filho");
+                    waitpid(forkpid,&status,0); //Espera que o filho termine
+                    if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
+
+                        return WEXITSTATUS(status);
+
+                  }else { //Senão retorna -1
+            return -1 ;
+        }
+                }
+
+    printf("Chegeu\n");
+}
+
+
+
+int trataBackup(char *arg, int tamanho,char* p){
+    
+    int i;
+    char ** args = parser(arg,tamanho);
+
+
+    if(execvp("gzip",args)==-1){
+        perror("Erro Exec: ");
+        exit(-1);
+
+    }
+return -1;
+   
 }
 
 
 int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
     char args[3][128];
-    if (sscanf(command,"%s %s %[^]]",args[0],args[1],args[2])!=3) {perror("Erro:");return -1;}
+    int erro=0;
+    if (sscanf(command,"%s %s %[^]\n]",args[0],args[1],args[2])!=3) return -1;
 
     if (strcmp(args[1],"backup")==0){
 
-        if ((forkpid=fork())==0){
+        forkpid=fork();
 
-             if (trataBackup(args[2],tamanho-2,args[0])==0){
-                
+        if (forkpid==0){
+
+             erro=calcDigest(args[2],tamanho-2,args[0]);  
+
+             if(erro!=-1){
+               // erro=trataBackup(args[2],tamanho-2,args[0]);
                 //ENvia sinal ao cliente que backup feito;
               
                     kill(atoi(args[0]), SIGINT);
@@ -84,7 +153,7 @@ void recebePedido() {
     int args=1;
 	fd = open(NOME_PIPE, O_RDONLY);
 
-    if(fd==-1) perror("Erro abertura pipe:");
+    if(fd==-1) perror("Erro abertura pipe");
     else
         while ( (tamanho=read(fd, buff + i, 1) > 0 )) {             
             if(buff[i]==' '){
