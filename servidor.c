@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -24,6 +23,7 @@ char** parser(char* agg,int tamanho) {
 
 
     while (token != NULL) {
+
         args[size++] = strdup(token);
         if (size == max_size) {
             max_size++;
@@ -37,11 +37,34 @@ char** parser(char* agg,int tamanho) {
     return args;
 }
 
+
+char** parserZip(char* agg,int tamanho) {
+    int size = 0;
+    int max_size = tamanho;
+    char** args = (char**)malloc(sizeof(char*) * max_size);
+    char* token = strtok(agg, " \n");
+
+
+    while (token != NULL) {
+        
+        args[size++] = strdup(token);
+        if (size == max_size) {
+            max_size++;
+            args = (char**)realloc(args, sizeof(char*) * max_size);
+        }
+        token = strtok(NULL, " \n");
+    }
+
+    args[size] = NULL;
+
+    return args;
+}
+
 int fazZip(){
 
     pid_t forkpid;
-    int i;
-    forkpid=fork();
+    int i=0;
+    char *str=malloc(100*sizeof(char));
     char buffer[1024];
     char *tmp[4];
     int fd = open("shasum.txt",O_RDONLY, 0666);
@@ -51,18 +74,40 @@ int fazZip(){
         exit(EXIT_FAILURE);
     }
 
+    while(read(fd,buffer+i,1)>0){
+                if (buffer[i] == '\n') {
+                        char **args = parser(buffer,3);
+                        strcat(str," ");
+                        strcat(str,args[2]);
+                      //  sprintf(str,"%s", args[2]);
+                        i=0;
+                }
+        i++;
+    }
+    char *aux=(char*)malloc((strlen(str)+1) *sizeof(char));
+    aux=strdup(str);
+    char **final=parser(aux,2);
+    int total=0;
+    for(i=1;final[i]!=NULL;i++) total++;
 
-    read(fd,buffer,1024);
-    char **args = parser(buffer,3);
-    int r = strlen(args[2])-1;
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
-     tmp[2]=strdup(args[2]);
-     tmp[3]=NULL;
-   tmp[2][r]='\0'; 
+    int k=2;
+
+    for(i=1;i<=total;i++){
+        int r = strlen(final[i])-1;
+        tmp[k]=strdup(final[i]);
+        tmp[k][r]='\0';
+
+        k++;
+}
+        tmp[k]=NULL;
+    
+  
+     
+    forkpid=fork();
 
    if (forkpid==0){
-
             if(execvp(tmp[0],tmp)==-1) perror("Erro Exec:");
 
 
@@ -74,7 +119,6 @@ int fazZip(){
                     int status;
                     waitpid(forkpid,&status,0); //Espera que o filho termine
                     if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
-
                         return 1;
 
                   }else { //Senão retorna -1
@@ -90,7 +134,6 @@ int calcDigest(char *arg, int tamanho,char* p){
     pid_t forkpid;
     
     
-        forkpid=fork();
         char **args = parser(arg,tamanho);
         args[0]=strdup("shasum");
 
@@ -103,6 +146,7 @@ int calcDigest(char *arg, int tamanho,char* p){
 
         dup2(fd, 1);
 
+        forkpid=fork();
 
             if (forkpid==0){
 
@@ -210,12 +254,12 @@ return 0;
 }
 
 void recebePedido() {
-	int fd;
-	char buff[1024];
+    int fd;
+    char buff[1024];
     int i = 0;
     int tamanho;
     int args=1;
-	fd = open(NOME_PIPE, O_RDONLY);
+    fd = open(NOME_PIPE, O_RDONLY);
 
     if(fd==-1) perror("Erro abertura pipe");
     else
@@ -240,12 +284,5 @@ int main() {
    inicializaServidor();
    while(1) recebePedido();
 
-	return 0;
+    return 0;
 }
-
-
-
-
-
-
-

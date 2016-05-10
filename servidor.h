@@ -2,6 +2,6 @@
 #define CLIENTE_H
 #include <string.h>
 
-#define NOME_PIPE		"fifo"
+#define NOME_PIPE	"fifo"
 
 #endif
