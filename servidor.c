@@ -16,20 +16,20 @@ void inicializaServidor(){
 
 
 char** parser(char* agg,int tamanho) {
-    int size = 1;
+    int size = 0;
     int max_size = tamanho+1;
     char** args = (char**)malloc(sizeof(char*) * max_size);
-    char* token = strtok(agg, " ");
+    char* token = strtok(agg," ");
+        printf("TOKEN %s\n",token );
 
 
     while (token != NULL) {
-
         args[size++] = strdup(token);
         if (size == max_size) {
             max_size++;
             args = (char**)realloc(args, sizeof(char*) * max_size);
         }
-        token = strtok(NULL, " ");
+        token = strtok(NULL," ");
     }
 
     args[size] = NULL;
@@ -39,24 +39,30 @@ char** parser(char* agg,int tamanho) {
 
 
 
-char* inserePrefixo(char* arg){
+char* insereSufixo(char* arg){
         int r = strlen(arg)-1;
-        arg[r]='.';
-        strcat(arg,"gz");
+       // arg[r]='.';
+        strcat(arg,".gz");
+        printf("arg  final   %s\n",arg );
+
         char *str= strdup(arg);
+
+        printf("SUFIXO  final   %s\n",str );
 return str;
 }
 
 int fazZip(){
 
+
+
     pid_t forkpid;
     int i=0,status;
-    char *str=malloc(100*sizeof(char));
-    char *hash=malloc(100*sizeof(char));
+    char *str=malloc(128*sizeof(char));
+    char *hash=malloc(128*sizeof(char));
 
     char buffer[1024];
     char *tmp[4];
-    char *mover[3];
+    char *mover[4];
     char *fim[3];
     char *prefixos[4];
     int fd = open("shasum.txt",O_RDONLY, 0666);
@@ -80,12 +86,15 @@ int fazZip(){
 
     char *aux=(char*)malloc((strlen(str)+1) *sizeof(char));
     aux=strdup(str);
+    free(str);
     char **final=parser(aux,2);
 
 
      char *aux1=(char*)malloc((strlen(hash)+1) *sizeof(char));
     aux1=strdup(hash);
+    free(hash);
     char **final1=parser(aux1,2);
+
 
 
 
@@ -99,7 +108,7 @@ int fazZip(){
         int r = strlen(final[i])-1;
         tmp[k]=strdup(final[i]);
         tmp[k][r]='\0';
-        prefixos[i]=strdup(inserePrefixo(final[i]));
+        prefixos[i]=strdup(insereSufixo(final[i]));
         k++;
 }
         tmp[k]=NULL;
@@ -108,7 +117,7 @@ int fazZip(){
     k=1;
     for(i=1;i<=total;i++){
         int r = strlen(final1[i])+2;
-        mover[k]=strdup(inserePrefixo(final1[i]));
+        mover[k]=strdup(insereSufixo(final1[i]));
         mover[k][r]='\0';
 
         k++;
