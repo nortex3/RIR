@@ -74,11 +74,21 @@ int fazZip(){
     char *fim[3];
     char *prefixos[4];
     int fd = open("shasum.txt",O_RDONLY, 0666);
+
+    int metadata = open("metadata.txt",O_CREAT|O_RDWR,0666);
    
+
+    if (metadata < 0) {
+        perror("open()");
+        exit(EXIT_FAILURE);
+    }
+
     if (fd < 0) {
         perror("open()");
         exit(EXIT_FAILURE);
     }
+
+
 
     while(read(fd,buffer+i,1)>0){
                 if (buffer[i] == '\n') {
@@ -111,11 +121,17 @@ int fazZip(){
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
     int k=2;
-
+    char meta[128];
     for(i=1;i<=total;i++){
         int r = strlen(final[i])-1;
         tmp[k]=strdup(final[i]);
         tmp[k][r]='\0';
+
+        sprintf(meta,final[i]);
+        strcat(meta," ");
+        strcat(meta,"->");
+        strcat(meta," ");
+
         prefixos[i]=strdup(insereSufixo(final[i]));
         k++;
 }
@@ -134,10 +150,16 @@ int fazZip(){
                                 mover[k][j]=mover[k][j+1];
         }
 
-        mover[k][r]='\0';
 
+        strcat(meta,"../data/");
+        strcat(meta,mover[k]);
+        strcat(meta,"\n");
+        mover[k][r]='\0';
         k++;
 }
+    int tam=strlen(meta);
+    write(metadata,meta,tam);
+
     mover[k]=NULL;
      
 
@@ -157,6 +179,7 @@ int fazZip(){
                     if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
                       
                         for(i=1;i<=total;i++){
+
                           forkpid=fork();
                           if (forkpid==0){
                                 if(execlp("mv","mv",prefixos[i],mover[i],NULL)==-1) perror("Erro Exec:");
