@@ -16,11 +16,10 @@ void inicializaServidor(){
 
 
 char** parser(char* agg,int tamanho) {
-    int size = 0;
+    int size = 1;
     int max_size = tamanho+1;
     char** args = (char**)malloc(sizeof(char*) * max_size);
     char* token = strtok(agg," ");
-        printf("TOKEN %s\n",token );
 
 
     while (token != NULL) {
@@ -41,15 +40,24 @@ char** parser(char* agg,int tamanho) {
 
 char* insereSufixo(char* arg){
         int r = strlen(arg)-1;
-       // arg[r]='.';
-        strcat(arg,".gz");
-        printf("arg  final   %s\n",arg );
-
+        arg[r]='.';
+        strcat(arg,"gz");
         char *str= strdup(arg);
 
-        printf("SUFIXO  final   %s\n",str );
 return str;
 }
+
+
+
+char* insereSufixoHash(char* arg){
+        int r = strlen(arg);
+        arg[r]='.';
+        strcat(arg,"gz");
+        char *str= strdup(arg);
+
+return str;
+}
+
 
 int fazZip(){
 
@@ -116,8 +124,16 @@ int fazZip(){
 
     k=1;
     for(i=1;i<=total;i++){
-        int r = strlen(final1[i])+2;
-        mover[k]=strdup(insereSufixo(final1[i]));
+        int r = strlen(final1[i])+3;
+        int j;
+
+        mover[k]=strdup(insereSufixoHash(final1[i]));
+        
+        if(i!=1){
+            for(j=0;mover[k][j]!='\0';j++)
+                                mover[k][j]=mover[k][j+1];
+        }
+
         mover[k][r]='\0';
 
         k++;
