@@ -38,35 +38,27 @@ char** parser(char* agg,int tamanho) {
 }
 
 
-char** parserZip(char* agg,int tamanho) {
-    int size = 0;
-    int max_size = tamanho;
-    char** args = (char**)malloc(sizeof(char*) * max_size);
-    char* token = strtok(agg, " \n");
 
-
-    while (token != NULL) {
-        
-        args[size++] = strdup(token);
-        if (size == max_size) {
-            max_size++;
-            args = (char**)realloc(args, sizeof(char*) * max_size);
-        }
-        token = strtok(NULL, " \n");
-    }
-
-    args[size] = NULL;
-
-    return args;
+char* inserePrefixo(char* arg){
+        int r = strlen(arg)-1;
+        arg[r]='.';
+        strcat(arg,"gz");
+        char *str= strdup(arg);
+return str;
 }
 
 int fazZip(){
 
     pid_t forkpid;
-    int i=0;
+    int i=0,status;
     char *str=malloc(100*sizeof(char));
+    char *hash=malloc(100*sizeof(char));
+
     char buffer[1024];
     char *tmp[4];
+    char *mover[3];
+    char *fim[3];
+    char *prefixos[4];
     int fd = open("shasum.txt",O_RDONLY, 0666);
    
     if (fd < 0) {
@@ -77,19 +69,28 @@ int fazZip(){
     while(read(fd,buffer+i,1)>0){
                 if (buffer[i] == '\n') {
                         char **args = parser(buffer,3);
+                        strcat(hash," ");
+                        strcat(hash,args[1]);
                         strcat(str," ");
                         strcat(str,args[2]);
-                      //  sprintf(str,"%s", args[2]);
                         i=0;
                 }
         i++;
     }
+
     char *aux=(char*)malloc((strlen(str)+1) *sizeof(char));
     aux=strdup(str);
     char **final=parser(aux,2);
+
+
+     char *aux1=(char*)malloc((strlen(hash)+1) *sizeof(char));
+    aux1=strdup(hash);
+    char **final1=parser(aux1,2);
+
+
+
     int total=0;
     for(i=1;final[i]!=NULL;i++) total++;
-
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
     int k=2;
@@ -98,13 +99,23 @@ int fazZip(){
         int r = strlen(final[i])-1;
         tmp[k]=strdup(final[i]);
         tmp[k][r]='\0';
-
+        prefixos[i]=strdup(inserePrefixo(final[i]));
         k++;
 }
         tmp[k]=NULL;
     
-  
+
+    k=1;
+    for(i=1;i<=total;i++){
+        int r = strlen(final1[i])+2;
+        mover[k]=strdup(inserePrefixo(final1[i]));
+        mover[k][r]='\0';
+
+        k++;
+}
+    mover[k]=NULL;
      
+
     forkpid=fork();
 
    if (forkpid==0){
@@ -119,12 +130,32 @@ int fazZip(){
                     int status;
                     waitpid(forkpid,&status,0); //Espera que o filho termine
                     if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
-                        return 1;
+                      
+                        for(i=1;i<=total;i++){
+                          forkpid=fork();
+                          if (forkpid==0){
+                                if(execlp("mv","mv",prefixos[i],mover[i],NULL)==-1) perror("Erro Exec:");
+                          }
+                        }
 
-                  }else { //Senão retorna -1
-            return -1 ;
-        }
-    }
+                        for(i=1;i<=total;i++){
+
+                            wait(&status); //Espera que o filho termine
+                        }
+                      
+                        for(i=1;i<=total;i++){
+                        forkpid=fork();
+                        if (forkpid==0){
+                                if(execlp("mv","mv",mover[i],"Backup/data",NULL)==-1) perror("Erro Exec:");
+                          }
+                        }
+                        for(i=1;i<=total;i++){
+
+                            wait(&status); //Espera que o filho termine
+                            return 1;
+                        }
+         }
+          }
 
 
 }
@@ -174,22 +205,6 @@ int calcDigest(char *arg, int tamanho,char* p){
 
 
 
-int trataBackup(char *arg, int tamanho,char* p){
-    
-    int i;
-    char ** args = parser(arg,tamanho);
-
-
-    if(execvp("gzip",args)==-1){
-        perror("Erro Exec: ");
-        exit(-1);
-
-    }
-return -1;
-   
-}
-
-
 int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
     char args[3][128];
@@ -210,6 +225,7 @@ int delegaTarefa(char *command, int tamanho){
                  if(erro!=-1){
                     erro=fazZip();
                  }
+                
                  if(erro!=-1){
                    // erro=trataBackup(args[2],tamanho-2,args[0]);
                     //ENvia sinal ao cliente que backup feito;
