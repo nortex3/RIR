@@ -60,7 +60,7 @@ return str;
 
 void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
-        int metadata = open("metadata.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+        int metadata = open(NOME_FICHEIRO,O_CREAT|O_RDWR|O_APPEND,0666);
 
     if (metadata < 0) {
         perror("open()");

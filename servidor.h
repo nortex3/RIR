@@ -3,5 +3,6 @@
 #include <string.h>
 
 #define NOME_PIPE	"fifo"
+#define NOME_FICHEIRO "metadata.txt"
 
 #endif
