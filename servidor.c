@@ -87,22 +87,16 @@ int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 int fazZip(){
 
 
-
     pid_t forkpid;
     int i=0,status;
     char *str=malloc(128*sizeof(char));
     char *hash=malloc(128*sizeof(char));
 
     char buffer[1024];
-    char *tmp[4];
-    char *mover[4];
-    char *fim[3];
-    char *prefixos[4];
-    char *ficheiroNome[4];
-    char *ficheiroHash[4];
+    
     int fd = open("shasum.txt",O_RDONLY, 0666);
 
-   
+
 
 
     if (fd < 0) {
@@ -139,6 +133,13 @@ int fazZip(){
 
     int total=0;
     for(i=1;final[i]!=NULL;i++) total++;
+
+    char **tmp=(char**)malloc((2+total) *sizeof(char*));
+    char **mover=(char**)malloc((1+total) *sizeof(char*));
+    char **prefixos=(char**)malloc((1+total) *sizeof(char*));
+    char **ficheiroNome=(char**)malloc((total) *sizeof(char*));
+    char **ficheiroHash=(char**)malloc((total) *sizeof(char*));
+
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
     int k=2;
@@ -153,7 +154,7 @@ int fazZip(){
         k++;
 }
         tmp[k]=NULL;
-    
+
 
     k=1;
     int c=0;
@@ -218,8 +219,14 @@ int fazZip(){
 
                                 wait(&status); //Espera que o filho termine
                             }
-                            if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1)
+                            if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1){
+                                free(prefixos);
+                                free(ficheiroHash);
+                                free(ficheiroNome);
+                                free(mover);
+                                free(tmp);
                              return 1;
+                         }
                             else return -1;
                         
 
