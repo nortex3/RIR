@@ -32,7 +32,7 @@ void copiado(){
 
 /* Mensagem erro no backup */
 void erro_backup(){
-	printf("Nome do ficheiro: ocorreu um erro \n");
+	printf("Ocorreu algum erro \n");
 }
 
 int main(int argc, char const *argv[])

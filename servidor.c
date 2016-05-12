@@ -59,14 +59,13 @@ char* insereSufixoHash(char* arg){
 return str;
 }
 
-void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
+int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
     int metadata = open(NOME_FICHEIRO,O_CREAT|O_WRONLY|O_APPEND,0666);
 
 
     if (metadata < 0) {
-        perror("open()");
-        exit(EXIT_FAILURE);
+        return -1;
     }
         int i,r,k;
         for(i=0;i<total;i++){
@@ -82,7 +81,7 @@ void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
         }
         close(metadata);
-
+        return 1;
 }
 
 int fazZip(){
@@ -107,8 +106,7 @@ int fazZip(){
 
 
     if (fd < 0) {
-        perror("open()");
-        exit(EXIT_FAILURE);
+        return -1;
     }
 
 
@@ -220,9 +218,9 @@ int fazZip(){
 
                                 wait(&status); //Espera que o filho termine
                             }
-                              imprimeFicheiro(ficheiroNome,ficheiroHash,total);
+                            if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1)
                              return 1;
-
+                            else return -1;
                         
 
          }else return -1;
@@ -241,7 +239,7 @@ int calcDigest(char *arg, int tamanho,char* p){
 
        int fd = open("shasum.txt", O_CREAT |O_TRUNC| O_RDWR , 0666);
         if (fd < 0) {
-            perror("open()");
+            kill(atoi(args[0]), SIGUSR1);
             exit(EXIT_FAILURE);
         }
         close(1);
@@ -263,10 +261,7 @@ int calcDigest(char *arg, int tamanho,char* p){
                             int status;
                             waitpid(forkpid,&status,0); //Espera que o filho termine
                             if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
-                                close(fd);
-                                dup2(1,fd);
-
-                            return 1;
+                             return 1;
 
                           }else { //Senão retorna -1
                     return -1 ;
@@ -302,7 +297,7 @@ int delegaTarefa(char *command, int tamanho){
                         exit(1);
                     }else{
 
-                     kill(atoi(args[0]), SIGUSR1);
+                       kill(atoi(args[0]), SIGUSR1);
                      exit(0);
 
                  }
