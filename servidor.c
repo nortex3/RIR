@@ -1,3 +1,4 @@
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -60,7 +61,8 @@ return str;
 
 void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
-        int metadata = open(NOME_FICHEIRO,O_CREAT|O_RDWR|O_APPEND,0666);
+        int metadata = open(NOME_FICHEIRO,O_CREAT|O_WRONLY|O_APPEND,0666);
+
 
     if (metadata < 0) {
         perror("open()");
@@ -210,7 +212,7 @@ int fazZip(){
                         for(i=1;i<=total;i++){
                             forkpid=fork();
                             if (forkpid==0){
-                                    if(execlp("mv","mv",mover[i],"Backup/data",NULL)==-1) perror("Erro Exec:");
+                                    if(execlp("mv","mv",mover[i],DIR_DATA,NULL)==-1) perror("Erro Exec:");
                               }
                             }
                             for(i=1;i<=total;i++){
@@ -221,13 +223,14 @@ int fazZip(){
                          if (forkpid==0){
                                     imprimeFicheiro(ficheiroNome,ficheiroHash,total);
 
-                                    if(execlp("mv","mv","metadata.txt","Backup/metadata",NULL)==-1) perror("Erro Exec:");
+                                    if(execlp("mv","mv",NOME_FICHEIRO,DIR_METADATA,NULL)==-1) perror("Erro Exec:");
                               }
                           int status;
                           waitpid(forkpid,&status,0); //Espera que o filho termine
                           if(WIFEXITED(status))  {
                             return 1;
-                          }  
+                          }else
+                            return -1;  
 
          }
           }
@@ -298,21 +301,23 @@ int delegaTarefa(char *command, int tamanho){
                  erro=calcDigest(args[2],tamanho-2,args[0]);  
 
                  if(erro!=-1){
+
                     erro=fazZip();
+                    
+                    if(erro!=-1){
+                         kill(atoi(args[0]), SIGINT);
+                        exit(1);
+                    }else{
+
+                     kill(atoi(args[0]), SIGUSR1);
+                     exit(0);
+
+                 }
+                }else{
+                     kill(atoi(args[0]), SIGUSR1);
+                     exit(0);
                  }
                 
-                 if(erro!=-1){
-                   // erro=trataBackup(args[2],tamanho-2,args[0]);
-                    //ENvia sinal ao cliente que backup feito;
-                  
-                        kill(atoi(args[0]), SIGINT);
-                        exit(1);
-                }else{
-
-                    //ENvia sinal ao cliente que ocorreu um erro;
-                    kill(atoi(args[0]), SIGUSR1);
-                     exit(0);
-                }
           } 
         else if(forkpid<0){
                 puts("Erro na delegação de tarefa para processo filho");
