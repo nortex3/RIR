@@ -61,7 +61,7 @@ return str;
 
 void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
-        int metadata = open(NOME_FICHEIRO,O_CREAT|O_WRONLY|O_APPEND,0666);
+    int metadata = open(NOME_FICHEIRO,O_CREAT|O_WRONLY|O_APPEND,0666);
 
 
     if (metadata < 0) {
@@ -177,6 +177,7 @@ int fazZip(){
         k++;
         c++;
 }
+                                  
 
     mover[k]=NULL;
      
@@ -219,20 +220,12 @@ int fazZip(){
 
                                 wait(&status); //Espera que o filho termine
                             }
-                         forkpid=fork();
-                         if (forkpid==0){
-                                    imprimeFicheiro(ficheiroNome,ficheiroHash,total);
+                              imprimeFicheiro(ficheiroNome,ficheiroHash,total);
+                             return 1;
 
-                                    if(execlp("mv","mv",NOME_FICHEIRO,DIR_METADATA,NULL)==-1) perror("Erro Exec:");
-                              }
-                          int status;
-                          waitpid(forkpid,&status,0); //Espera que o filho termine
-                          if(WIFEXITED(status))  {
-                            return 1;
-                          }else
-                            return -1;  
+                        
 
-         }
+         }else return -1;
           }
 
 

@@ -3,8 +3,7 @@
 #include <string.h>
 
 #define NOME_PIPE	"fifo"
-#define NOME_FICHEIRO "metadata.txt"
-#define DIR_METADATA  "Backup/metadata"
+#define NOME_FICHEIRO "Backup/metadata/metadata.txt"
 #define DIR_DATA   "Backup/data"
 
 #endif
