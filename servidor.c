@@ -58,6 +58,30 @@ char* insereSufixoHash(char* arg){
 return str;
 }
 
+void imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
+
+        int metadata = open("metadata.txt",O_CREAT|O_RDWR|O_APPEND,0666);
+
+    if (metadata < 0) {
+        perror("open()");
+        exit(EXIT_FAILURE);
+    }
+        int i,r,k;
+        for(i=0;i<total;i++){
+            r=strlen(ficheiroNome[i]);
+            k=strlen(ficheiroHash[i]);
+
+            write(metadata,ficheiroNome[i],r-1);
+            write(metadata," ",1);
+            write(metadata,"->",2);
+            write(metadata,"../data/",8);
+            write(metadata,ficheiroHash[i],k);
+            write(metadata,"\n",2);
+
+        }
+        close(metadata);
+
+}
 
 int fazZip(){
 
@@ -73,15 +97,12 @@ int fazZip(){
     char *mover[4];
     char *fim[3];
     char *prefixos[4];
+    char *ficheiroNome[4];
+    char *ficheiroHash[4];
     int fd = open("shasum.txt",O_RDONLY, 0666);
 
-    int metadata = open("metadata.txt",O_CREAT|O_RDWR,0666);
    
 
-    if (metadata < 0) {
-        perror("open()");
-        exit(EXIT_FAILURE);
-    }
 
     if (fd < 0) {
         perror("open()");
@@ -121,17 +142,13 @@ int fazZip(){
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
     int k=2;
-    char meta[128];
+    int j=0;
     for(i=1;i<=total;i++){
         int r = strlen(final[i])-1;
         tmp[k]=strdup(final[i]);
         tmp[k][r]='\0';
-
-        sprintf(meta,final[i]);
-        strcat(meta," ");
-        strcat(meta,"->");
-        strcat(meta," ");
-
+        ficheiroNome[j]=strdup(final[i]);
+        j++;
         prefixos[i]=strdup(insereSufixo(final[i]));
         k++;
 }
@@ -139,6 +156,7 @@ int fazZip(){
     
 
     k=1;
+    int c=0;
     for(i=1;i<=total;i++){
         int r = strlen(final1[i])+3;
         int j;
@@ -150,15 +168,13 @@ int fazZip(){
                                 mover[k][j]=mover[k][j+1];
         }
 
-
-        strcat(meta,"../data/");
-        strcat(meta,mover[k]);
-        strcat(meta,"\n");
+        
         mover[k][r]='\0';
+        ficheiroHash[c]=strdup(mover[k]);
+
         k++;
+        c++;
 }
-    int tam=strlen(meta);
-    write(metadata,meta,tam);
 
     mover[k]=NULL;
      
@@ -192,16 +208,27 @@ int fazZip(){
                         }
                       
                         for(i=1;i<=total;i++){
-                        forkpid=fork();
-                        if (forkpid==0){
-                                if(execlp("mv","mv",mover[i],"Backup/data",NULL)==-1) perror("Erro Exec:");
-                          }
-                        }
-                        for(i=1;i<=total;i++){
+                            forkpid=fork();
+                            if (forkpid==0){
+                                    if(execlp("mv","mv",mover[i],"Backup/data",NULL)==-1) perror("Erro Exec:");
+                              }
+                            }
+                            for(i=1;i<=total;i++){
 
-                            wait(&status); //Espera que o filho termine
+                                wait(&status); //Espera que o filho termine
+                            }
+                         forkpid=fork();
+                         if (forkpid==0){
+                                    imprimeFicheiro(ficheiroNome,ficheiroHash,total);
+
+                                    if(execlp("mv","mv","metadata.txt","Backup/metadata",NULL)==-1) perror("Erro Exec:");
+                              }
+                          int status;
+                          waitpid(forkpid,&status,0); //Espera que o filho termine
+                          if(WIFEXITED(status))  {
                             return 1;
-                        }
+                          }  
+
          }
           }
 
