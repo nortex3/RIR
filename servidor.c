@@ -246,7 +246,7 @@ int calcDigest(char *arg, int tamanho,char* p){
 
        int fd = open("shasum.txt", O_CREAT |O_TRUNC| O_RDWR , 0666);
         if (fd < 0) {
-            kill(atoi(args[0]), SIGUSR1);
+            kill(atoi(p), SIGUSR1);
             exit(EXIT_FAILURE);
         }
         close(1);
