@@ -247,7 +247,7 @@ int fazUnzip(){
 
     char buffer[1024];
     
-    int fd = open("/Backup/metadata",O_RDONLY, 0666);
+    int fd = open("Backup/metadata/metadata.txt",O_RDONLY, 0666);
 
 
 
