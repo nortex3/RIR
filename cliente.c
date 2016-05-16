@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -17,7 +16,6 @@ static void escreve_pipe(char* str) {
 	close(fd);
 }
 
-
 /* Mensagem de comando errado */
 
 void arg_errados() {
@@ -27,7 +25,7 @@ void arg_errados() {
 
 /* Mensagem backup terminado */
 void copiado(){
-	printf("Nome do ficheiro: copiado\n");
+	printf("Nome Ficheiro : copiado\n");
 }
 
 /* Mensagem erro no backup */

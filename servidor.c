@@ -38,7 +38,6 @@ char** parser(char* agg,int tamanho) {
 }
 
 
-
 char* insereSufixo(char* arg){
         int r = strlen(arg)-1;
         arg[r]='.';
@@ -75,10 +74,10 @@ int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
             write(metadata,ficheiroNome[i],r-1);
             write(metadata," ",1);
             write(metadata,"->",2);
-            write(metadata," ",1);
-            write(metadata,"../data/",8);
+            write(metadata," Backup/data/",13);
             write(metadata,ficheiroHash[i],k);
-            write(metadata,"\n",2);
+            write(metadata,"\0",1);
+            write(metadata,"\n",1);
 
         }
         close(metadata);
@@ -156,7 +155,6 @@ int fazZip(){
 }
         tmp[k]=NULL;
 
-
     k=1;
     int c=0;
     for(i=1;i<=total;i++){
@@ -179,7 +177,6 @@ int fazZip(){
 }
                                   
 
-    mover[k]=NULL;
      
 
     forkpid=fork();
@@ -221,6 +218,7 @@ int fazZip(){
                                 wait(&status); //Espera que o filho termine
                             }
                             if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1){
+                                
                                 free(prefixos);
                                 free(ficheiroHash);
                                 free(ficheiroNome);
@@ -237,110 +235,7 @@ int fazZip(){
 
 }
 
-int fazUnzip(){
-    
-    
-    pid_t forkpid;
-    int i=0,status;
-    char *str=malloc(128*sizeof(char));
-    char *hash=malloc(128*sizeof(char));
-
-    char buffer[1024];
-    
-    int fd = open("Backup/metadata/metadata.txt",O_RDONLY, 0666);
-
-
-
-
-    if (fd < 0) {
-        return -1;
-    }
-
-
-
-    while(read(fd,buffer+i,1)>0){
-                if (buffer[i] == '\n') {
-                        char **args = parser(buffer,3);
-                        strcat(hash," ");
-                        strcat(hash,args[3]);
-                        strcat(str," ");
-                        strcat(str,args[1]);
-                        i=0;
-                }
-        i++;
-    }
-    
-    char *aux=(char*)malloc((strlen(str)+1) *sizeof(char));
-    aux=strdup(str);
-    free(str);
-    char **final=parser(aux,2);
-
-
-    char *aux1=(char*)malloc((strlen(hash)+1) *sizeof(char));
-    aux1=strdup(hash);
-    free(hash);
-    char **final1=parser(aux1,2);
-
-
-
-
-    int total=0;
-    for(i=1;final[i]!=NULL;i++) total++;
-
-    char **tmp=(char**)malloc((2+total) *sizeof(char*));
-    char **mover=(char**)malloc((1+total) *sizeof(char*));
-    char **prefixos=(char**)malloc((1+total) *sizeof(char*));
-    char **ficheiroNome=(char**)malloc((total) *sizeof(char*));
-    char **ficheiroHash=(char**)malloc((total) *sizeof(char*));
-
-    tmp[0]=strdup("gunzip");
-    int k=1;
-    int j=0;
-    for(i=1;i<=total;i++){
-        int r = strlen(final[i])-1;
-        tmp[k]=strdup(final[i]);
-        tmp[k][r]='\0';
-        ficheiroNome[j]=strdup(final[i]);
-        j++;
-        prefixos[i]=strdup(insereSufixo(final[i]));
-        k++;
-}
-        tmp[k]=NULL;
-
-
-    k=1;
-    int c=0;
-    for(i=1;i<=total;i++){
-        int r = strlen(final1[i])+3;
-        int j;
-
-        mover[k]=strdup(insereSufixoHash(final1[i]));
-        
-        if(i!=1){
-            for(j=0;mover[k][j]!='\0';j++)
-                                mover[k][j]=mover[k][j+1];
-        }
-
-        
-        mover[k][r]='\0';
-        ficheiroHash[c]=strdup(mover[k]);
-
-        k++;
-        c++;
-}
-                                  
-
-    mover[k]=NULL;
-     
-   //mover[i] = strcat("/Backup/data", mover[i]);
-    
-// if(execlp("mv","mv",mover[i],prefixos[i],NULL)==-1) perror("Erro Exec:");
-
-}
-
-
-
-int calcDigest(char *arg, int tamanho,char* p){
+int calcDigest(char *arg, int tamanho,char *p){
 
     pid_t forkpid;
     
@@ -372,6 +267,8 @@ int calcDigest(char *arg, int tamanho,char* p){
                             int status;
                             waitpid(forkpid,&status,0); //Espera que o filho termine
                             if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
+                                close(fd);
+                                dup2(fd,1);
                              return 1;
 
                           }else { //Senão retorna -1
@@ -379,6 +276,135 @@ int calcDigest(char *arg, int tamanho,char* p){
                 }
     }
 }
+
+int fazUnzip(char *arg, int tamanho,char* p){
+
+        pid_t forkpid;
+        char *str=malloc(128*sizeof(char));
+        char *hash=malloc(128*sizeof(char));
+        char buffer[1024];
+        int i=0,j=1,h,q=1;
+        char **meta;
+
+        char **args = parser(arg,tamanho);
+
+       int fd = open("Backup/metadata/metadata.txt", O_RDONLY , 0666);
+        if (fd < 0) {
+            kill(atoi(p), SIGUSR1);
+            exit(EXIT_FAILURE);
+        }
+
+        while(read(fd,buffer+i,1)>0){
+
+                    if (buffer[i] == '\n') {
+
+                            meta = parser(buffer,4);
+
+                          if(q!=1)
+                            for(h=0;meta[1][h]!='\0';h++)
+                                meta[1][h]=meta[1][h+1];
+                                         
+               
+                            while(j<=tamanho){
+                                if(strcmp(args[j],meta[1])!=0){
+                                    j++;
+                                }else{
+      
+                                strcat(str," ");
+                                strcat(str,meta[1]);
+                                strcat(hash," ");
+                                strcat(hash,meta[3]);
+                                j++;
+                                }
+                            }
+                            i=0;
+                            j=1;
+                            q++;
+                    }
+            i++;
+        }
+
+        char *aux=(char*)malloc((strlen(str)) *sizeof(char));
+        aux=strdup(str);
+        free(str);
+        char **ficheiros=parser(aux,2);
+
+
+         char *aux1=(char*)malloc((strlen(hash)) *sizeof(char));
+        aux1=strdup(hash);
+        free(hash);
+        char **hashs=parser(aux1,2);
+
+    int total=0;
+    for(i=1;ficheiros[i]!=NULL;i++) total++;
+
+
+    char **tmp=(char**)malloc((total+2) *sizeof(char*));
+    char **ficheiroNome=(char**)malloc((total+2) *sizeof(char*));
+    char **ficheiroSemGZ=(char**)malloc((total+2) *sizeof(char*));
+
+    tmp[0]=strdup("gunzip");
+    tmp[1]=strdup("-k");
+    int k=2;
+    // Guarda hashs e nomes ficheiros originais
+    for(i=1;i<=total;i++){
+        int r  = strlen(hashs[i]);
+        tmp[k]=strdup(hashs[i]);
+        tmp[k][r]='\0';
+        char* fSemGZ=(char*)malloc((strlen(hashs[i])) *sizeof(char));
+
+        fSemGZ=strdup(hashs[i]);
+        r=strlen(fSemGZ);
+        fSemGZ[r-3]='\0';
+        ficheiroSemGZ[i]=strdup(fSemGZ);
+        ficheiroNome[i]=strdup(ficheiros[i]);
+        k++;
+    }
+        tmp[k]=NULL;
+
+   forkpid=fork();
+
+   if (forkpid==0){
+            if(execvp(tmp[0],tmp)==-1) perror("Erro Exec:");
+
+
+    }else if(forkpid<0){
+                //puts("Erro na delegação de tarefa para processo filho");
+                return -1;
+              }else{
+
+                    //puts("Tarefa delegada para processo filho");
+                    int status;
+                    waitpid(forkpid,&status,0); //Espera que o filho termine
+                    if(WIFEXITED(status)){ 
+                    // Se o filho terminou normalmente, entao...
+                    
+                        for(i=1;i<=total;i++){
+
+                          forkpid=fork();
+                          if (forkpid==0){
+                                 if(execlp("mv","mv",ficheiroSemGZ[i],ficheiroNome[i],NULL)==-1) perror("Erro Exec:");
+                          }
+                        }
+
+                        for(i=1;i<=total;i++){
+
+                            wait(&status); //Espera que o filho termine
+                            return 1;
+                        }
+                      
+                        
+                }else { //Senão retorna -1
+                    return -1 ;
+                }
+        
+        
+
+
+
+            }
+}
+
 
 
 
@@ -431,8 +457,10 @@ int delegaTarefa(char *command, int tamanho){
     else if(strcmp(args[1],"restore")==0){
 
         if ((forkpid=fork())==0){
-            
-                    erro=fazUnzip();
+
+                 erro=fazUnzip(args[2],tamanho-2,args[0]);  
+
+                 if(erro!=-1){
                     
                     if(erro!=-1){
                          kill(atoi(args[0]), SIGINT);
@@ -443,6 +471,8 @@ int delegaTarefa(char *command, int tamanho){
                      exit(0);
 
                  }
+                }
+            _exit(0);
         }
         else if(forkpid<0){
             puts("Erro na delegação de tarefa para processo filho");
@@ -452,10 +482,8 @@ int delegaTarefa(char *command, int tamanho){
             puts("Tarefa delegada para processo filho");
             wait(&status);
         }
-    }
-    else {
-        kill(atoi(args[0]), SIGQUIT);
-    }
+    }else  kill(atoi(args[0]), SIGQUIT);
+
 return 0;
 
 }
