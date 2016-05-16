@@ -74,7 +74,7 @@ int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
             write(metadata,ficheiroNome[i],r-1);
             write(metadata," ",1);
             write(metadata,"->",2);
-            write(metadata," ../data/",9);
+            write(metadata," Backup/data/",13);
             write(metadata,ficheiroHash[i],k);
             write(metadata,"\0",1);
             write(metadata,"\n",1);
@@ -288,7 +288,7 @@ int fazUnzip(char *arg, int tamanho,char* p){
 
         char **args = parser(arg,tamanho);
 
-       int fd = open(DIR_METADATA, O_RDONLY , 0666);
+       int fd = open(NOME_FICHEIRO, O_RDONLY , 0666);
         if (fd < 0) {
             kill(atoi(p), SIGUSR1);
             exit(EXIT_FAILURE);
