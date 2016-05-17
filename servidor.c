@@ -231,7 +231,6 @@ int fazZip(){
          }else return -1;
           }
 
-
 }
 
 int calcDigest(char *arg, int tamanho,char *p){
@@ -274,6 +273,7 @@ int calcDigest(char *arg, int tamanho,char *p){
                     return -1 ;
                 }
     }
+
 }
 
 int fazUnzip(char *arg, int tamanho,char* p){
@@ -284,17 +284,17 @@ int fazUnzip(char *arg, int tamanho,char* p){
         char buffer[1024];
         int i=0,j=1,h,q=1;
         char **meta;
-
         char **args = parser(arg,tamanho);
 
        int fd = open(NOME_FICHEIRO, O_RDONLY , 0666);
         if (fd < 0) {
-            kill(atoi(p), SIGUSR1);
+            kill(atoi(p), SIGINT);
             exit(EXIT_FAILURE);
         }
             int r=0;
 
         while(read(fd,buffer+i,1)>0){
+
                     if (buffer[i] == '\n') {
 
                             meta = parser(buffer,4);
@@ -317,6 +317,7 @@ int fazUnzip(char *arg, int tamanho,char* p){
                                         strcat(hash,meta[3]);
                                         args[j]=strdup(" ");
                                         j++;
+
                                   
                                  }
                              }
@@ -402,11 +403,8 @@ int fazUnzip(char *arg, int tamanho,char* p){
                     return -1 ;
                 }
         
-        
-
-
-
             }
+
 }
 
 
@@ -434,16 +432,17 @@ int delegaTarefa(char *command, int tamanho){
                     erro=fazZip();
                     
                     if(erro!=-1){
-                         kill(atoi(args[0]), SIGINT);
+                        kill(atoi(args[0]), SIGUSR1);
                         exit(1);
                     }else{
 
-                       kill(atoi(args[0]), SIGUSR1);
+                       kill(atoi(args[0]), SIGINT);
+
                      exit(0);
 
                  }
                 }else{
-                     kill(atoi(args[0]), SIGUSR1);
+                       kill(atoi(args[0]), SIGINT);
                      exit(0);
                  }
                 
@@ -464,19 +463,18 @@ int delegaTarefa(char *command, int tamanho){
 
                  erro=fazUnzip(args[2],tamanho-2,args[0]);  
 
-                 if(erro!=-1){
                     
                     if(erro!=-1){
-                         kill(atoi(args[0]), SIGINT);
+                          kill(atoi(args[0]), SIGUSR2);
+
                         exit(1);
                     }else{
+                         kill(atoi(args[0]), SIGINT);
 
-                       kill(atoi(args[0]), SIGUSR1);
                      exit(0);
 
                  }
-                }
-            _exit(0);
+                
         }
         else if(forkpid<0){
             puts("Erro na delegação de tarefa para processo filho");
@@ -507,7 +505,7 @@ void recebePedido() {
                 args++;
             }
             if (buff[i] == '\0') {
-                delegaTarefa(buff,args);
+                delegaTarefa(buff,args-1);
                 i = 0;
             }
             else i++;

@@ -25,7 +25,13 @@ void arg_errados() {
 
 /* Mensagem backup terminado */
 void copiado(){
-	printf("Nome Ficheiro : copiado\n");
+	printf("Ficheiros Copiados\n");
+}
+
+/* Mensagem restore terminado */
+
+void recuperado(){
+	printf("Ficheiros Recuperados\n");
 }
 
 /* Mensagem erro no backup */
@@ -43,9 +49,10 @@ int main(int argc, char const *argv[])
 
 	sprintf(buffer, "%d ", getpid());
 
-	signal(SIGINT,copiado);
+	signal(SIGUSR1,copiado);
+	signal(SIGUSR2,recuperado);
 	signal(SIGQUIT,arg_errados);
-	signal(SIGUSR1,erro_backup);
+	signal(SIGINT,erro_backup);
 
 
 	for(t=1;t<argc;t++){
