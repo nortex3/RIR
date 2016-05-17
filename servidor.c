@@ -1,4 +1,3 @@
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -293,9 +292,9 @@ int fazUnzip(char *arg, int tamanho,char* p){
             kill(atoi(p), SIGUSR1);
             exit(EXIT_FAILURE);
         }
+            int r=0;
 
         while(read(fd,buffer+i,1)>0){
-
                     if (buffer[i] == '\n') {
 
                             meta = parser(buffer,4);
@@ -308,15 +307,20 @@ int fazUnzip(char *arg, int tamanho,char* p){
                             while(j<=tamanho){
                                 if(strcmp(args[j],meta[1])!=0){
                                     j++;
+
                                 }else{
-      
-                                strcat(str," ");
-                                strcat(str,meta[1]);
-                                strcat(hash," ");
-                                strcat(hash,meta[3]);
-                                j++;
-                                }
-                            }
+                               
+                                    
+                                        strcat(str," ");
+                                        strcat(str,meta[1]);
+                                        strcat(hash," ");
+                                        strcat(hash,meta[3]);
+                                        args[j]=strdup(" ");
+                                        j++;
+                                  
+                                 }
+                             }
+                            
                             i=0;
                             j=1;
                             q++;
