@@ -40,21 +40,23 @@ int main(int argc, char const *argv[])
 	int t ;
 	char* str;
 	char buffer[1024];
-	char pid[10];
 
-	sprintf(pid, "%d", getpid());
+	sprintf(buffer, "%d ", getpid());
 
 	signal(SIGINT,copiado);
 	signal(SIGQUIT,arg_errados);
 	signal(SIGUSR1,erro_backup);
 
-	if(read(0,buffer,1024)){
-		str=(char*)calloc(strlen(buffer)+ strlen(pid),sizeof(char));
-		sprintf(str, "%s %s", pid ,buffer);
-		escreve_pipe(str);
-		pause();
-		free(str);
+
+	for(t=1;t<argc;t++){
+
+		strcat(buffer,argv[t]);
+		strcat(buffer," ");
 	}
+	
+		escreve_pipe(buffer);
+		pause();
+	
 
 	return 0;
 }

@@ -506,7 +506,7 @@ void recebePedido() {
             if(buff[i]==' '){
                 args++;
             }
-            if (buff[i] == '\n') {
+            if (buff[i] == '\0') {
                 delegaTarefa(buff,args);
                 i = 0;
             }
