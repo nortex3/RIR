@@ -277,7 +277,7 @@ int calcDigest(char *arg, int tamanho,char *p){
 
         dup2(fd, 1);
         close(fd);
-      forkpid=fork();
+        forkpid=fork();
 
             if (forkpid==0){
 
@@ -349,11 +349,12 @@ int fazUnzip(char *arg, int tamanho,char* p){
              close(pd[1]);
              read(pd[0],b,128);
              close(pd[0]);
-
-            int r = strlen(b);
-            b[r-1]='\0';
-            buff[i]=strdup(b);             
-                        
+             if(strlen(b)==0) return -1;
+             else{
+                  int r = strlen(b);
+                  b[r-1]='\0';
+                  buff[i]=strdup(b); 
+             }           
            }
 
       }
