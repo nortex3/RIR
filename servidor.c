@@ -260,21 +260,16 @@ return -1;
 }
 
 
-int existsAux(char *fname)
+int existeFicheiroAux(char *fich)
 {
-    char *filename = strdup(fname);
-    if( access( filename, F_OK ) != -1 ) {
-    return 1;
-} else {
-    return 0;
-}
+    char *file = strdup(fich);
+    if( access( file, F_OK ) != -1 ) return 1; 
+    else return 0;
 }
 
-int exists(char *args)
+int existeFicheiro(char *args)
 {
-    int flag;
-     flag=existsAux(args);
-    return flag;
+    return existeFicheiroAux(args);
 }
 
 /* Calcula shasum do ficheiro */
@@ -297,7 +292,7 @@ int calcDigest(char *arg, int tamanho,char *p){
         close(fd);
         int r=0;
         int i;
-        for(i=1;i<=tamanho && r==0;i++) if(exists(args[i])!=1) r=1;
+        for(i=1;i<=tamanho && r==0;i++) if(existeFicheiro(args[i])!=1) r=1;
       
         if(r==0){
         forkpid=fork();
