@@ -259,6 +259,24 @@ int fazZip(){
 return -1;
 }
 
+
+int existsAux(char *fname)
+{
+    char *filename = strdup(fname);
+    if( access( filename, F_OK ) != -1 ) {
+    return 1;
+} else {
+    return 0;
+}
+}
+
+int exists(char *args)
+{
+    int flag;
+     flag=existsAux(args);
+    return flag;
+}
+
 /* Calcula shasum do ficheiro */
 
 int calcDigest(char *arg, int tamanho,char *p){
@@ -277,6 +295,11 @@ int calcDigest(char *arg, int tamanho,char *p){
 
         dup2(fd, 1);
         close(fd);
+        int r=0;
+        int i;
+        for(i=1;i<=tamanho && r==0;i++) if(exists(args[i])!=1) r=1;
+      
+        if(r==0){
         forkpid=fork();
 
             if (forkpid==0){
@@ -299,6 +322,8 @@ int calcDigest(char *arg, int tamanho,char *p){
                     return -1 ;
                 }
     }
+  }   
+
 return -1;
 
 }
