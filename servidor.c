@@ -10,10 +10,13 @@
 #include "servidor.h"
 
 
+/* Inicializa Servidor */
+
 void inicializaServidor(){
    mkfifo(NOME_PIPE,0666);
 }
 
+/* Parser de strings */
 
 char** parser(char* agg,int tamanho) {
     int size = 1;
@@ -36,6 +39,7 @@ char** parser(char* agg,int tamanho) {
     return args;
 }
 
+/* Adiciona Sufixo ao final de String */
 
 char* insereSufixo(char* arg){
         int r = strlen(arg)-1;
@@ -47,6 +51,7 @@ return str;
 }
 
 
+/* Adiciona Sufixo ao final de String */
 
 char* insereSufixoHash(char* arg){
         int r = strlen(arg);
@@ -56,6 +61,8 @@ char* insereSufixoHash(char* arg){
 
 return str;
 }
+
+/* Guarda informação no ficheiro metadata */
 
 int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
 
@@ -83,6 +90,8 @@ int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
         return 1;
 }
 
+/* Faz Zip dos ficheiros */
+
 int fazZip(){
 
 
@@ -93,9 +102,7 @@ int fazZip(){
 
     char buffer[1024];
     
-    int fd = open("shasum.txt",O_RDONLY, 0666);
-
-
+    int fd = open(NOME_HASH,O_RDONLY, 0666);
 
 
     if (fd < 0) {
@@ -185,13 +192,12 @@ int fazZip(){
 
 
     }else if(forkpid<0){
-                //puts("Erro na delegação de tarefa para processo filho");
+                puts("Erro na delegação de tarefa para processo filho");
                 return -1;
               }else{
-                    //puts("Tarefa delegada para processo filho");
                     int status;
-                    waitpid(forkpid,&status,0); //Espera que o filho termine
-                    if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
+                    waitpid(forkpid,&status,0); 
+                    if(WIFEXITED(status)){ 
                       
                         for(i=1;i<=total;i++){
 
@@ -203,7 +209,7 @@ int fazZip(){
 
                         for(i=1;i<=total;i++){
 
-                            wait(&status); //Espera que o filho termine
+                            wait(&status); 
                         }
                       
                         for(i=1;i<=total;i++){
@@ -214,7 +220,7 @@ int fazZip(){
                             }
                             for(i=1;i<=total;i++){
 
-                                wait(&status); //Espera que o filho termine
+                                wait(&status); 
                             }
                             if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1){
                                 
@@ -230,8 +236,10 @@ int fazZip(){
 
          }else return -1;
           }
-
+return -1;
 }
+
+/* Calcula shasum do ficheiro */
 
 int calcDigest(char *arg, int tamanho,char *p){
 
@@ -241,7 +249,7 @@ int calcDigest(char *arg, int tamanho,char *p){
         char **args = parser(arg,tamanho);
         args[0]=strdup("shasum");
 
-       int fd = open("shasum.txt", O_CREAT |O_TRUNC| O_RDWR , 0666);
+       int fd = open(NOME_HASH, O_CREAT |O_TRUNC| O_RDWR , 0666);
         if (fd < 0) {
             kill(atoi(p), SIGUSR1);
             exit(EXIT_FAILURE);
@@ -261,20 +269,24 @@ int calcDigest(char *arg, int tamanho,char *p){
                         puts("Erro na delegação de tarefa para processo filho");
                         return -1;
                       }else{
-                          //  puts("Tarefa delegada para processo filho");
+                         
                             int status;
-                            waitpid(forkpid,&status,0); //Espera que o filho termine
-                            if(WIFEXITED(status)){ // Se o filho terminou normalmente, entao...
+                            waitpid(forkpid,&status,0); 
+                            if(WIFEXITED(status)){ 
                                 close(fd);
                                 dup2(fd,1);
                              return 1;
 
-                          }else { //Senão retorna -1
+                          }else { 
                     return -1 ;
                 }
     }
+return -1;
 
 }
+
+
+/* Faz unzip de ficheiros */
 
 int fazUnzip(char *arg, int tamanho,char* p){
 
@@ -351,7 +363,6 @@ int fazUnzip(char *arg, int tamanho,char* p){
     tmp[0]=strdup("gunzip");
     tmp[1]=strdup("-k");
     int k=2;
-    // Guarda hashs e nomes ficheiros originais
     for(i=1;i<=total;i++){
         int r  = strlen(hashs[i]);
         tmp[k]=strdup(hashs[i]);
@@ -374,15 +385,12 @@ int fazUnzip(char *arg, int tamanho,char* p){
 
 
     }else if(forkpid<0){
-                //puts("Erro na delegação de tarefa para processo filho");
                 return -1;
               }else{
 
-                    //puts("Tarefa delegada para processo filho");
                     int status;
-                    waitpid(forkpid,&status,0); //Espera que o filho termine
+                    waitpid(forkpid,&status,0); 
                     if(WIFEXITED(status)){ 
-                    // Se o filho terminou normalmente, entao...
                     
                         for(i=1;i<=total;i++){
 
@@ -394,21 +402,22 @@ int fazUnzip(char *arg, int tamanho,char* p){
 
                         for(i=1;i<=total;i++){
 
-                            wait(&status); //Espera que o filho termine
+                            wait(&status); 
                             return 1;
                         }
                       
                         
-                }else { //Senão retorna -1
+                }else { 
                     return -1 ;
                 }
         
             }
+return -1;
 
 }
 
 
-
+/* Delega tarefa Backup ou Restore */
 
 int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
@@ -489,6 +498,8 @@ int delegaTarefa(char *command, int tamanho){
 return 0;
 
 }
+
+/* Recebe pedido de cliente */
 
 void recebePedido() {
     int fd;
