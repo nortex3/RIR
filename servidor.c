@@ -96,7 +96,8 @@ int fazZip(){
 
 
     pid_t forkpid;
-    int i=0,status;
+    int i=0,status,k,r,j,c;
+;
     char *str=malloc(128*sizeof(char));
     char *hash=malloc(128*sizeof(char));
 
@@ -148,24 +149,24 @@ int fazZip(){
 
     tmp[0]=strdup("gzip");
     tmp[1]=strdup("-k");
-    int k=2;
-    int j=0;
+    k=2;
+    j=0;
+
     for(i=1;i<=total;i++){
-        int r = strlen(final[i])-1;
+        r = strlen(final[i])-1;
         tmp[k]=strdup(final[i]);
         tmp[k][r]='\0';
         ficheiroNome[j]=strdup(final[i]);
         j++;
         prefixos[i]=strdup(insereSufixo(final[i]));
         k++;
-}
+    }
         tmp[k]=NULL;
 
     k=1;
-    int c=0;
+    c=0;
     for(i=1;i<=total;i++){
-        int r = strlen(final1[i])+3;
-        int j;
+        r = strlen(final1[i])+3;
 
         mover[k]=strdup(insereSufixoHash(final1[i]));
         
@@ -222,16 +223,36 @@ int fazZip(){
 
                                 wait(&status); 
                             }
-                            if(imprimeFicheiro(ficheiroNome,ficheiroHash,total)!=-1){
-                                
-                                free(prefixos);
-                                free(ficheiroHash);
-                                free(ficheiroNome);
-                                free(mover);
-                                free(tmp);
-                             return 1;
-                         }
-                            else return -1;
+                            int u=0;
+
+                        for(i=1;i<=total;i++){
+                           
+
+                            forkpid=fork();
+                            if (forkpid==0){
+                                char *filemetadata= (char*)malloc(100*sizeof(char));
+                                char *filedata= (char*)malloc(100*sizeof(char));
+
+                                    strcat(filedata,"Backup/data/");
+                                    strcat(filedata,ficheiroHash[u]);
+                                    strcat(filemetadata,"Backup/metadata/");
+                                 r=strlen(ficheiroNome[u]);
+                                 ficheiroNome[u][r-1]='\0';
+
+                                    strcat(filemetadata,ficheiroNome[u]);
+
+
+                                     if(execlp("ln", "ln", "-sf", filedata,filemetadata,  NULL)==-1)return -1;
+
+                              }
+                                                           u++; 
+
+                            }
+                            for(i=1;i<=total;i++){
+
+                                wait(&status); 
+                            }
+                            return 1;
                         
 
          }else return -1;
@@ -258,7 +279,7 @@ int calcDigest(char *arg, int tamanho,char *p){
 
         dup2(fd, 1);
 
-        forkpid=fork();
+      forkpid=fork();
 
             if (forkpid==0){
 
@@ -290,141 +311,114 @@ return -1;
 
 int fazUnzip(char *arg, int tamanho,char* p){
 
-        pid_t forkpid;
-        char *str=malloc(128*sizeof(char));
-        char *hash=malloc(128*sizeof(char));
-        char buffer[1024];
-        int i=0,j=1,h,q=1;
-        char **meta;
-        char **args = parser(arg,tamanho);
-
-       int fd = open(NOME_FICHEIRO, O_RDONLY , 0666);
-        if (fd < 0) {
-            kill(atoi(p), SIGINT);
-            exit(EXIT_FAILURE);
-        }
-            int r=0;
-
-        while(read(fd,buffer+i,1)>0){
-
-                    if (buffer[i] == '\n') {
-
-                            meta = parser(buffer,4);
-
-                          if(q!=1)
-                            for(h=0;meta[1][h]!='\0';h++)
-                                meta[1][h]=meta[1][h+1];
-                                         
-               
-                            while(j<=tamanho){
-                                if(strcmp(args[j],meta[1])!=0){
-                                    j++;
-
-                                }else{
-                               
-                                    
-                                        strcat(str," ");
-                                        strcat(str,meta[1]);
-                                        strcat(hash," ");
-                                        strcat(hash,meta[3]);
-                                        args[j]=strdup(" ");
-                                        j++;
-
-                                  
-                                 }
-                             }
-                            
-                            i=0;
-                            j=1;
-                            q++;
-                    }
-            i++;
-        }
-
-        char *aux=(char*)malloc((strlen(str)) *sizeof(char));
-        aux=strdup(str);
-        free(str);
-        char **ficheiros=parser(aux,2);
+ pid_t forkpid;
+ char **args = parser(arg,tamanho);
+ int i,j,total=0;
+ for(i=1;args[i]!=NULL;i++) total++;
 
 
-         char *aux1=(char*)malloc((strlen(hash)) *sizeof(char));
-        aux1=strdup(hash);
-        free(hash);
-        char **hashs=parser(aux1,2);
-
-    int total=0;
-    for(i=1;ficheiros[i]!=NULL;i++) total++;
+ char **tmp=(char**)malloc((3+total) *sizeof(char*));    
+  char**buff=(char**)malloc(2+total*sizeof(char*));
+  
+  tmp[0]=strdup("gunzip");
+  tmp[1]=strdup("-k");  
 
 
-    char **tmp=(char**)malloc((total+2) *sizeof(char*));
-    char **ficheiroNome=(char**)malloc((total+2) *sizeof(char*));
-    char **ficheiroSemGZ=(char**)malloc((total+2) *sizeof(char*));
-
-    tmp[0]=strdup("gunzip");
-    tmp[1]=strdup("-k");
-    int k=2;
     for(i=1;i<=total;i++){
-        int r  = strlen(hashs[i]);
-        tmp[k]=strdup(hashs[i]);
-        tmp[k][r]='\0';
-        char* fSemGZ=(char*)malloc((strlen(hashs[i])) *sizeof(char));
+        int pd[2];
+        pipe(pd);
+        char *s=(char*)malloc(128*sizeof(char*));
+        char *b=(char*)malloc(128*sizeof(char));
 
-        fSemGZ=strdup(hashs[i]);
-        r=strlen(fSemGZ);
-        fSemGZ[r-3]='\0';
-        ficheiroSemGZ[i]=strdup(fSemGZ);
-        ficheiroNome[i]=strdup(ficheiros[i]);
-        k++;
-    }
-        tmp[k]=NULL;
-
-   forkpid=fork();
-
-   if (forkpid==0){
-            if(execvp(tmp[0],tmp)==-1) perror("Erro Exec:");
+        forkpid=fork();
 
 
-    }else if(forkpid<0){
-                return -1;
-              }else{
+         sprintf(s,"Backup/metadata/%s",args[i]);
+                     
+        if (forkpid==0){
 
-                    int status;
-                    waitpid(forkpid,&status,0); 
-                    if(WIFEXITED(status)){ 
-                    
-                        for(i=1;i<=total;i++){
+           dup2(pd[1],1);
+           close(pd[1]);
+           close(pd[0]);
 
-                          forkpid=fork();
-                          if (forkpid==0){
-                                 if(execlp("mv","mv",ficheiroSemGZ[i],ficheiroNome[i],NULL)==-1) perror("Erro Exec:");
-                          }
-                        }
+           if(execlp("readlink","readlink",s,NULL)==-1){
+             perror("Erro Exec:");
+             return -1;
+           }
+        }else{   
+             int status;           
+             wait(&status); 
+             dup2(pd[0],0);
+             close(pd[1]);
+             read(pd[0],b,128);
+             close(pd[0]);
 
-                        for(i=1;i<=total;i++){
-
-                            wait(&status); 
-                            return 1;
-                        }
-                      
+            int r = strlen(b);
+            b[r-1]='\0';
+            buff[i]=strdup(b);             
                         
-                }else { 
-                    return -1 ;
-                }
+           }
+
+      }
+  
+        j=1;
+ 
+        for(i=2;i<=total+1;i++){
+
+            tmp[i] = strdup(buff[j]);
+            j++;
+        }
+
+        tmp[i]=NULL;
+  
+        forkpid=fork();
         
-            }
-return -1;
+        if (forkpid==0){
+
+            if(execvp(tmp[0],tmp)==-1){
+                 perror("Erro Exec:"); 
+                 return -1;
+             }
+            }else{
+                int status;
+                waitpid(forkpid,&status,0); 
+                
+                if(WIFEXITED(status)){
+                    for(j=1;j<=total;j++){
+
+                        forkpid=fork();
+
+                        if (forkpid==0){
+
+                            for(i=1;i<=total;i++){
+
+                                int r = strlen(buff[i]);
+
+                                buff[i][r-3]='\0';
+                            }
+
+                            if(execlp("mv","mv",buff[j],args[j],NULL)==-1){
+                                 perror("Erro Exec:"); 
+                                 return -1;
+                             }
+                         }else{
+                            wait(&status);
+
+                         }
+                        }
+                    }
+                    else return -1;
+                }     
+    return 1;
 
 }
-
-
 /* Delega tarefa Backup ou Restore */
 
 int delegaTarefa(char *command, int tamanho){
     int forkpid,status;
     char args[3][128];
     int erro=0;
-    int i;
-    int j=0;
+
     if (sscanf(command,"%s %s %[^]\n]",args[0],args[1],args[2])!=3) return -1;
 
     if (strcmp(args[1],"backup")==0){
