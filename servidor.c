@@ -96,7 +96,7 @@ int fazZip(){
 
 
     pid_t forkpid;
-    int i=0,status,k,r,j,c;
+    int i=0,k,r,j,c;
 ;
     char *str=malloc(128*sizeof(char));
     char *hash=malloc(128*sizeof(char));
@@ -224,7 +224,6 @@ int fazZip(){
                                 wait(&status); 
                             }
                             int u=0;
-
                         for(i=1;i<=total;i++){
                            
 
@@ -275,10 +274,9 @@ int calcDigest(char *arg, int tamanho,char *p){
             kill(atoi(p), SIGUSR1);
             exit(EXIT_FAILURE);
         }
-        close(1);
 
         dup2(fd, 1);
-
+        close(fd);
       forkpid=fork();
 
             if (forkpid==0){
@@ -294,8 +292,7 @@ int calcDigest(char *arg, int tamanho,char *p){
                             int status;
                             waitpid(forkpid,&status,0); 
                             if(WIFEXITED(status)){ 
-                                close(fd);
-                                dup2(fd,1);
+                               
                              return 1;
 
                           }else { 
