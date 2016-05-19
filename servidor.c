@@ -9,11 +9,21 @@
 #include <string.h>
 #include "servidor.h"
 
+static int cont;
 
 /* Inicializa Servidor */
 
 void inicializaServidor(){
+  
+  struct stat st={0};
+  if(stat(DIR_BACKUP,&st)==-1){
+      mkdir(DIR_BACKUP,0700);
+      mkdir(DIR_DATA,0700);
+      mkdir(DIR_METADATA,0700);
+  }
+
    mkfifo(NOME_PIPE,0666);
+   cont=1;
 }
 
 /* Parser de strings */
@@ -39,6 +49,31 @@ char** parser(char* agg,int tamanho) {
     return args;
 }
 
+/* Parser de strings */
+
+char* retornaPrimeira(char* arg) {
+   int i=0;
+   char *pid=(char*)malloc(10*sizeof(char));
+   while (arg[i] != ' ') {
+      pid[i]=arg[i];
+      i++;      
+    }
+    pid[i]='\0';
+
+    return pid;
+}
+
+int contaArgs(char *arg){
+  int r=0;
+  int i=0;
+    while (arg[i] != '\0') {
+      if(arg[i]==' ') r++;
+      i++;      
+    }
+
+    return r;
+}
+
 /* Adiciona Sufixo ao final de String */
 
 char* insereSufixo(char* arg){
@@ -62,33 +97,7 @@ char* insereSufixoHash(char* arg){
 return str;
 }
 
-/* Guarda informação no ficheiro metadata */
 
-int imprimeFicheiro(char** ficheiroNome,char** ficheiroHash, int total){
-
-    int metadata = open(NOME_FICHEIRO,O_CREAT|O_WRONLY|O_APPEND,0666);
-
-
-    if (metadata < 0) {
-        return -1;
-    }
-        int i,r,k;
-        for(i=0;i<total;i++){
-            r=strlen(ficheiroNome[i]);
-            k=strlen(ficheiroHash[i]);
-
-            write(metadata,ficheiroNome[i],r-1);
-            write(metadata," ",1);
-            write(metadata,"->",2);
-            write(metadata," Backup/data/",13);
-            write(metadata,ficheiroHash[i],k);
-            write(metadata,"\0",1);
-            write(metadata,"\n",1);
-
-        }
-        close(metadata);
-        return 1;
-}
 
 /* Faz Zip dos ficheiros */
 
@@ -181,7 +190,7 @@ int fazZip(){
 
         k++;
         c++;
-}
+  }
                                   
 
      
@@ -226,22 +235,22 @@ int fazZip(){
                             int u=0;
                         for(i=1;i<=total;i++){
                            
+                                char *metadata= (char*)malloc(228*sizeof(char));
+                                char *data= (char*)malloc(228*sizeof(char));
 
                             forkpid=fork();
                             if (forkpid==0){
-                                char *filemetadata= (char*)malloc(100*sizeof(char));
-                                char *filedata= (char*)malloc(100*sizeof(char));
 
-                                    strcat(filedata,"Backup/data/");
-                                    strcat(filedata,ficheiroHash[u]);
-                                    strcat(filemetadata,"Backup/metadata/");
+                                    strcat(data,DIR_DATA);
+                                    strcat(data,ficheiroHash[u]);
+                                    strcat(metadata,DIR_METADATA);
                                  r=strlen(ficheiroNome[u]);
                                  ficheiroNome[u][r-1]='\0';
 
-                                    strcat(filemetadata,ficheiroNome[u]);
+                                    strcat(metadata,ficheiroNome[u]);
 
 
-                                     if(execlp("ln", "ln", "-sf", filedata,filemetadata,  NULL)==-1)return -1;
+                                     if(execlp("ln", "ln", "-sf", data,metadata,  NULL)==-1)return -1;
 
                               }
                                                            u++; 
@@ -284,8 +293,7 @@ int calcDigest(char *arg, int tamanho,char *p){
 
        int fd = open(NOME_HASH, O_CREAT |O_TRUNC| O_RDWR , 0666);
         if (fd < 0) {
-            kill(atoi(p), SIGUSR1);
-            exit(EXIT_FAILURE);
+           return -1;
         }
 
         dup2(fd, 1);
@@ -349,9 +357,9 @@ int fazUnzip(char *arg, int tamanho,char* p){
 
         forkpid=fork();
 
-
-         sprintf(s,"Backup/metadata/%s",args[i]);
-                     
+        sprintf(s,"%s",DIR_METADATA);
+        strcat(s,args[i]);
+ 
         if (forkpid==0){
 
            dup2(pd[1],1);
@@ -430,6 +438,7 @@ int fazUnzip(char *arg, int tamanho,char* p){
     return 1;
 
 }
+
 /* Delega tarefa Backup ou Restore */
 
 int delegaTarefa(char *command, int tamanho){
@@ -438,20 +447,18 @@ int delegaTarefa(char *command, int tamanho){
     int erro=0;
 
     if (sscanf(command,"%s %s %[^]\n]",args[0],args[1],args[2])!=3) return -1;
-
+    
     if (strcmp(args[1],"backup")==0){
 
         forkpid=fork();
-
+sleep(10);
 
         if (forkpid==0){
-
                  erro=calcDigest(args[2],tamanho-2,args[0]);  
 
                  if(erro!=-1){
 
                     erro=fazZip();
-                    
                     if(erro!=-1){
                         kill(atoi(args[0]), SIGUSR1);
                         exit(1);
@@ -518,23 +525,37 @@ void recebePedido() {
     char buff[1024];
     int i = 0;
     int tamanho;
+    char *aux;
     int args=1;
+    pid_t forkpid;
     fd = open(NOME_PIPE, O_RDONLY);
-
     if(fd==-1) perror("Erro abertura pipe");
-    else
-        while ( (tamanho=read(fd, buff + i, 1) > 0 )) {             
-            if(buff[i]==' '){
-                args++;
-            }
-            if (buff[i] == '\0') {
-                delegaTarefa(buff,args-1);
-                i = 0;
-            }
-            else i++;
-         }
+    else{
+        
+        while ( (tamanho=read(fd, buff, 1024) > 0 )) {    
+                if(cont<3){
+
+                        forkpid=fork();
+                          if(forkpid==0){
+                              cont++;
+
+                            delegaTarefa(buff,contaArgs(buff));
+                                cont--;
+
+                            kill(getpid(),SIGKILL);
+                        }
+
+                  }else{
+                    char* pid = strdup(retornaPrimeira(buff));
+                    printf("%s\n",pid );
+                        kill(atoi(pid),SIGQUIT);
+                  }
+         } 
+    }
+       
     close(fd);
 }
+
 
 
 
@@ -542,7 +563,10 @@ int main() {
 
 
    inicializaServidor();
-   while(1) recebePedido();
+   
+   while(1)
+    recebePedido();
+    
 
     return 0;
 }

@@ -11,7 +11,7 @@
 
 /**Escreve no pipe*/
 static void escreve_pipe(char* str) {
-	int fd = open(NOME_PIPE, O_WRONLY);
+	int fd = open(NOME_PIPE, O_WRONLY,0666);
 	write(fd, str, strlen(str) + 1);
 	close(fd);
 }
@@ -35,7 +35,7 @@ void recuperado(){
 }
 
 /* Mensagem erro no backup */
-void erro_backup(){
+void erro(){
 	printf("Ocorreu algum erro \n");
 }
 
@@ -44,7 +44,6 @@ int main(int argc, char const *argv[])
 	
 
 	int t ;
-	char* str;
 	char buffer[1024];
 
 	sprintf(buffer, "%d ", getpid());
@@ -52,7 +51,7 @@ int main(int argc, char const *argv[])
 	signal(SIGUSR1,copiado);
 	signal(SIGUSR2,recuperado);
 	signal(SIGQUIT,arg_errados);
-	signal(SIGINT,erro_backup);
+	signal(SIGINT,erro);
 
 
 	for(t=1;t<argc;t++){
