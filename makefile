@@ -1,10 +1,14 @@
-all: servidor cliente
+cc = gcc
+CFLAGS=-Wall -Wextra -O2 
+
+all: servidor cliente 
 
 servidor:
-	gcc -Wall -o servidor servidor.c
+	$(CC) $(CFLAGS) -o servidor  src/servidor.c
 
 cliente:
-	gcc -Wall -o cliente cliente.c
+	$(CC) $(CFLAGS) -o cliente src/cliente.c
+
 
 clean: 
 	  $(RM) servidor cliente
