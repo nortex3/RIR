@@ -439,6 +439,34 @@ int fazUnzip(char *arg, int tamanho){
 
 }
 
+/* Faz delete de ficheiro */
+
+int fazDelete(char *arg, int tamanho){
+
+  char **args = parser(arg,tamanho);
+  pid_t forkpid;
+  int i;
+
+      for(i=1;i<=tamanho;i++){
+         char *metadata= (char*)malloc(228*sizeof(char));
+        forkpid=fork();
+        if(forkpid==0){
+            strcat(metadata,DIR_METADATA);
+            strcat(metadata,args[i]);
+          if(execlp("rm","rm",metadata,NULL)==-1){
+                perror("Erro Exec:"); 
+                 return -1;
+              }
+            }
+          }
+        for(i=1;i<=tamanho;i++){
+          int status;
+          wait(&status); 
+         }              
+return 1;
+
+}
+
 /* Delega tarefa Backup ou Restore */
 
 int delegaTarefa(char *command, int tamanho){
@@ -501,6 +529,25 @@ int delegaTarefa(char *command, int tamanho){
 
                  }
                 
+        } 
+      }else if(strcmp(args[1],"delete")==0){
+
+               if ((forkpid=fork())==0){
+
+                 erro=fazDelete(args[2],tamanho-2);  
+
+                    
+                    if(erro!=-1){
+                          kill(atoi(args[0]), SIGHUP);
+
+                        exit(1);
+                    }else{
+                         kill(atoi(args[0]), SIGINT);
+
+                     exit(0);
+
+                 }
+                
         }
         else if(forkpid<0){
             puts("Erro na delegação de tarefa para processo filho");
@@ -511,6 +558,7 @@ int delegaTarefa(char *command, int tamanho){
             wait(&status);
         }
     }else  kill(atoi(args[0]), SIGQUIT);
+
 
 return 0;
 

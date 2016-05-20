@@ -23,6 +23,12 @@ void arg_errados() {
 }
 
 
+/* Mensagem de comando delete */
+
+void apagado() {
+	printf("Ficheiros apagados\n");
+}
+
 /* Mensagem backup terminado */
 void copiado(){
 	printf("Ficheiros Copiados\n");
@@ -52,6 +58,7 @@ int main(int argc, char const *argv[])
 	signal(SIGUSR2,recuperado);
 	signal(SIGQUIT,arg_errados);
 	signal(SIGINT,erro);
+	signal(SIGHUP,apagado);
 
 
 	for(t=1;t<argc;t++){
