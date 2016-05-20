@@ -261,6 +261,8 @@ int fazZip(){
 return -1;
 }
 
+/* Verifica se ficheiro existe na diretoria */
+
 
 int existeFicheiroAux(char *fich)
 {
@@ -268,6 +270,8 @@ int existeFicheiroAux(char *fich)
     if( access( file, F_OK ) != -1 ) return 1; 
     else return 0;
 }
+
+/* Verifica se ficheiro existe na diretoria */
 
 int existeFicheiro(char *args)
 {
