@@ -33,7 +33,6 @@ char** parser(char* agg,int tamanho) {
     char** args = (char**)malloc(sizeof(char*) * max_size);
     char* token = strtok(agg," ");
 
-
     while (token != NULL) {
         args[size++] = strdup(token);
         if (size == max_size) {
