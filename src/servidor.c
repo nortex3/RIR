@@ -529,7 +529,14 @@ int delegaTarefa(char *command, int tamanho){
 
                  }
                 
-        } 
+        }   else if(forkpid<0){
+                puts("Erro na delegação de tarefa para processo filho");
+                return -1;
+              }else{
+                    puts("Tarefa delegada para processo filho");
+                    wait(&status);
+                    return 1;
+                }
       }else if(strcmp(args[1],"delete")==0){
 
                if ((forkpid=fork())==0){
