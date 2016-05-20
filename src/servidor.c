@@ -41,18 +41,7 @@ char** parser(char* agg,int tamanho) {
     return args;
 }
 
-/* Parser de strings */
-
-char* retornaPrimeira(char* arg) {
-   int i=0;
-   char *pid=(char*)malloc(10*sizeof(char));
-   while (arg[i] != ' ') {
-      pid[i]=arg[i];
-      i++;      
-    }
-    pid[i]='\0';
-    return pid;
-}
+/* Conta número de argumentos */
 
 int contaArgs(char *arg){
   int r=0;
