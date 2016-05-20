@@ -15,13 +15,6 @@
 
 void inicializaServidor(){
   
-  struct stat st={};
-  if(stat(DIR_BACKUP,&st)==-1){
-      mkdir(DIR_BACKUP,0700);
-      mkdir(DIR_DATA,0700);
-      mkdir(DIR_METADATA,0700);
-  }
-
    mkfifo(NOME_PIPE,0666);
 }
 
@@ -32,6 +25,7 @@ char** parser(char* agg,int tamanho) {
     int max_size = tamanho+1;
     char** args = (char**)malloc(sizeof(char*) * max_size);
     char* token = strtok(agg," ");
+
 
     while (token != NULL) {
         args[size++] = strdup(token);
